@@ -1,0 +1,167 @@
+networks: #per far parlare tra loro i container utilizzando solo il loro nome, non è necessario conoscere ip
+  sabd_network: #crea rete virtuale privata per far comunicare i container
+    driver: bridge
+
+volumes: #prepara dischi fissi virtuali che persistono in caso di eliminazione container
+  influxdb_data:
+  grafana_data:
+
+services:
+  # ==========================================
+  # 1. HDFS (Storage Layer) - Immagini del Prof. Nardelli
+  # ==========================================
+  master:
+    image: matnar/hadoop
+    container_name: hdfs-master
+    platform: linux/amd64      # OBBLIGATORIO PER MAC M4
+    tty: true
+    stdin_open: true #tty e stdin_open fanno in modo che il container rimanga sempre acceso
+    ports:
+      - "9870:9870"
+      - "54310:54310" #porta per Spark e NiFi
+    networks:
+      - sabd_network
+
+  slave1:
+    image: matnar/hadoop
+    container_name: hdfs-slave1
+    platform: linux/amd64      # OBBLIGATORIO PER MAC M4
+    tty: true
+    stdin_open: true
+    ports:
+      - "9864:9864" #porta mac:porta container
+    networks:
+      - sabd_network
+
+  slave2:
+    image: matnar/hadoop
+    container_name: hdfs-slave2
+    platform: linux/amd64      # OBBLIGATORIO PER MAC M4
+    tty: true
+    stdin_open: true
+    ports:
+      - "9863:9864" #porta mac:porta container
+    networks:
+      - sabd_network
+
+  # ==========================================
+  # 2. SERVING LAYER (Redis & InfluxDB)
+  # ==========================================
+  redis:
+    image: redis:alpine
+    container_name: redis-server
+    ports:
+      - "6379:6379"
+    networks:
+      - sabd_network
+
+  influxdb:
+    image: influxdb:2.7
+    container_name: influxdb-server
+    ports:
+      - "8086:8086"
+    volumes:
+      - influxdb_data:/var/lib/influxdb2 #il percorso è dove influx salva i file di database
+    environment: #autosetup di influx
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUX_USER}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUX_PASS}
+      - DOCKER_INFLUXDB_INIT_ORG=sabd_org
+      - DOCKER_INFLUXDB_INIT_BUCKET=query_results
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUX_TOKEN}
+    networks:
+      - sabd_network
+
+  # ==========================================
+  # 3. PROCESSING LAYER (Spark Ufficiale)
+  # ==========================================
+  spark-master:
+    image: apache/spark:3.5.1
+    container_name: spark-master
+    depends_on:
+      - master      # Aspetta HDFS
+      - influxdb    # Aspetta il database delle serie storiche
+      - redis       # Aspetta la cache
+    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master"] # per comportarsi da master
+    ports:
+      - "8080:8080"
+      - "7077:7077"
+    environment:
+      - HDFS_URL=hdfs://hdfs-master:54310 # indirizzo del container
+    volumes:
+      - ./spark_code:/opt/spark/work/ # bind mount
+    networks:
+      - sabd_network
+
+  spark-worker:
+    image: apache/spark:3.5.1
+    depends_on:
+      - spark-master #si accende solo dopo l avvio del master
+    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.worker.Worker", "spark://spark-master:7077"] # forza ad essere un worker, comunica al master alla porta 7077
+    environment:
+      - SPARK_WORKER_MEMORY=4G  # il worker può usare al massimo 4 gb di ram
+      - SPARK_WORKER_CORES=2 # il worker può usare al massimo 2 core
+      # AGGIUNTA QUI: Anche i worker devono sapere dove si trova Hadoop
+      - HDFS_URL=hdfs://hdfs-master:54310
+    volumes:
+      - ./spark_code:/opt/spark/work/
+    networks:
+      - sabd_network
+
+  # ==========================================
+  # 4. INGESTION (NiFi)
+  # ==========================================
+  nifi:
+    build: 
+      context: ./nifi      # Dice a Docker di guardare nella tua cartella nifi
+      dockerfile: Dockerfile # E di usare il file che abbiamo appena creato
+    container_name: nifi-server
+    ports:
+      - "8443:8443"
+    environment:
+      - SINGLE_USER_CREDENTIALS_USERNAME=${NIFI_USER}
+      - SINGLE_USER_CREDENTIALS_PASSWORD=${NIFI_PASS}
+    volumes:
+      - ./ProjectData:/opt/nifi/nifi-current/dataset #bindmount
+      # AGGIORNATO: Ora punta alla nuova cartella nifi/hdfs_conf
+      - ./nifi/hdfs_conf:/scripts #bindmount
+    networks:
+      - sabd_network
+
+  # ==========================================
+  # 4. VISUALIZATION (Grafana + Image Renderer)
+  # ==========================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana-server
+    ports:
+      - "3000:3000"
+    networks:
+      - sabd_network
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASS}
+      - GF_INSTALL_PLUGINS=redis-datasource
+      - GF_RENDERING_SERVER_URL=http://grafana-renderer:8081/render
+      - GF_RENDERING_CALLBACK_URL=http://grafana:3000/
+      - GF_LOG_FILTERS=rendering:debug
+      # AGGIUNTA QUI: Il token di sicurezza!
+      - GF_RENDERING_RENDERER_TOKEN=${RENDERER_TOKEN}
+    depends_on:
+      - grafana-renderer
+
+  grafana-renderer:
+    image: grafana/grafana-image-renderer:latest
+    container_name: grafana-renderer
+    platform: linux/amd64
+    ports:
+      - "8081:8081"
+    networks:
+      - sabd_network
+    environment:
+      # AGGIUNTA QUI: Anche il renderer deve conoscere il token!
+      - AUTH_TOKEN=${RENDERER_TOKEN}
