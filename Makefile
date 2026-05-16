@@ -1,4 +1,14 @@
 # ==========================================
+# Variabili di Ambiente 
+# ==========================================
+DEPS = cd spark_code && rm -f deps.zip && zip -r deps.zip . -x "*.pyc" "__pycache__/*"
+
+SUBMIT_QUERY = $(DEPS) && docker exec -it spark-master /opt/spark/bin/spark-submit \
+		--master spark://spark-master:7077 \
+		--py-files /opt/spark/work/deps.zip \
+		/opt/spark/work/
+
+# ==========================================
 # Comandi Rapidi - Progetto SABD
 # ==========================================
 
@@ -32,7 +42,7 @@ start-hdfs:
 	@echo "Sblocco SafeMode per consentire a NiFi di scrivere..."
 	docker exec -it hdfs-master hdfs dfsadmin -safemode leave
 
-# 5. PULIZIA HDFS
+# 6. PULIZIA HDFS
 clean-hdfs:
 	@echo "Pulizia della cartella / su HDFS in corso..."
 	docker exec -it hdfs-master hdfs dfs -rm -r -skipTrash /dataset_parquet || true
@@ -57,27 +67,70 @@ restore-flow:
 # GESTIONE SPARK 
 # ==========================================
 
-# 1. Zippa tutti i file "extra" (es. moduli di utilità) per mandarli ai Worker
-deps: #crea zip da mandare ai nodi worker
-	cd spark_code && rm -f deps.zip && zip -r deps.zip . -x "*.pyc" "__pycache__/*" 
+deps: 
+	$(DEPS)
 
-# 2. Comando base di submit con parametri e dipendenze
-submit: deps
-	@if [ -z "$(script)" ]; then \
-		echo "Uso: make submit script=main.py args='--q 1 --api df'"; \
-	else \ 
-		docker exec -it spark-master /opt/spark/bin/spark-submit \
-			--master spark://spark-master:7077 \
-			--py-files /opt/spark/work/deps.zip \
-			/opt/spark/work/$(script) $(args); \
-	fi
-
-# 3. La VERA scorciatoia per testare tutte le API (RDD, DF, SQL)
-# Uso: make query q=1 api=df
 query:
 	@if [ -z "$(q)" ] || [ -z "$(api)" ]; then \
-		echo "Devi specificare query e API! Esempio: make query q=1 api=df"; \
+		echo "Esempio: make query q=1 api=df format=csv"; \
 	else \
-		echo "Eseguendo Query $(q) con API $(api)..."; \
-		make submit script=main.py args="--q $(q) --api $(api) --format csv"; \
+		$(SUBMIT_QUERY)main.py --q $(q) --api $(api) --format $${format:-csv}; \
+	fi
+
+perf:
+	@if [ -z "$(q)" ] || [ -z "$(api)" ]; then \
+		echo "Esempio: make perf q=1 api=df times=10 format=csv"; \
+	else \
+		$(SUBMIT_QUERY)benchmark_runner.py --q $(q) --api $(api) --format $${format:-csv} --times $${times:-10}; \
+	fi
+
+# 3. Scorciatoia per eseguire le Query
+query:
+	@if [ -z "$(q)" ] || [ -z "$(api)" ]; then \
+		echo "Esempio: make query q=1 api=df format=csv"; \
+	else \
+		echo "Eseguendo Query $(q) con API $(api) in formato $${format:-csv}..."; \
+		make submit script=main.py args="--q $(q) --api $(api) --format $${format:-csv}"; \
+	fi
+
+# 4. Scorciatoia per i Benchmark
+benchmark:
+	@if [ -z "$(q)" ] || [ -z "$(api)" ]; then \
+		echo "Esempio: make benchmark q=1 api=df times=30 format=csv"; \
+	else \
+		echo "Avvio Benchmark per Query $(q) con API $(api)..."; \
+		make submit script=benchmark_runner.py args="--q $(q) --api $(api) --format $${format:-csv} --times $${times:-30}"; \
+	fi
+
+# ==========================================
+# ESECUZIONI BATCH E SCALABILITÀ
+# ==========================================
+
+all_query:
+	$(SUBMIT_QUERY)main.py --q 1 --api rdd --format csv
+	$(SUBMIT_QUERY)main.py --q 1 --api df  --format csv
+	$(SUBMIT_QUERY)main.py --q 1 --api sql --format csv
+	$(SUBMIT_QUERY)main.py --q 2 --api rdd --format csv
+	$(SUBMIT_QUERY)main.py --q 2 --api df  --format csv
+	$(SUBMIT_QUERY)main.py --q 2 --api sql --format csv
+
+all_perf:
+	$(SUBMIT_QUERY)benchmark_runner.py --q 1 --api rdd --format csv --times 10
+	$(SUBMIT_QUERY)benchmark_runner.py --q 1 --api df  --format csv --times 10
+	$(SUBMIT_QUERY)benchmark_runner.py --q 1 --api sql --format csv --times 10
+	$(SUBMIT_QUERY)benchmark_runner.py --q 2 --api rdd --format csv --times 10
+	$(SUBMIT_QUERY)benchmark_runner.py --q 2 --api df  --format csv --times 10
+	$(SUBMIT_QUERY)benchmark_runner.py --q 2 --api sql --format csv --times 10
+	$(SUBMIT_QUERY)benchmark_runner.py --q 1 --api df  --format parquet --times 10
+	$(SUBMIT_QUERY)benchmark_runner.py --q 1 --api sql --format parquet --times 10
+	$(SUBMIT_QUERY)benchmark_runner.py --q 2 --api df  --format parquet --times 10
+	$(SUBMIT_QUERY)benchmark_runner.py --q 2 --api sql --format parquet --times 10
+
+# Test di scalabilità (aggiunge o rimuove container worker a caldo)
+scale:
+	@if [ -z "$(workers)" ]; then \
+		echo "Uso: make scale workers=3"; \
+	else \
+		echo "Scalando il cluster a $(workers) Spark Worker..."; \
+		docker-compose up -d --scale spark-worker=$(workers); \
 	fi

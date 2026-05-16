@@ -76,7 +76,9 @@ services:
   # 3. PROCESSING LAYER (Spark Ufficiale)
   # ==========================================
   spark-master:
-    image: apache/spark:3.5.1
+    build: 
+      context: ./spark_code
+      dockerfile: Dockerfile
     container_name: spark-master
     depends_on:
       - master      # Aspetta HDFS
@@ -88,13 +90,16 @@ services:
       - "7077:7077"
     environment:
       - HDFS_URL=hdfs://hdfs-master:54310 # indirizzo del container
+      - INFLUX_TOKEN=${INFLUX_TOKEN}
     volumes:
       - ./spark_code:/opt/spark/work/ # bind mount
     networks:
       - sabd_network
 
   spark-worker:
-    image: apache/spark:3.5.1
+    build: 
+      context: ./spark_code
+      dockerfile: Dockerfile
     depends_on:
       - spark-master #si accende solo dopo l avvio del master
     command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.worker.Worker", "spark://spark-master:7077"] # forza ad essere un worker, comunica al master alla porta 7077
@@ -103,6 +108,8 @@ services:
       - SPARK_WORKER_CORES=2 # il worker può usare al massimo 2 core
       # AGGIUNTA QUI: Anche i worker devono sapere dove si trova Hadoop
       - HDFS_URL=hdfs://hdfs-master:54310
+      - INFLUX_TOKEN=${INFLUX_TOKEN}
+      - SPARK_WORKER_DIR=/tmp/spark-logs
     volumes:
       - ./spark_code:/opt/spark/work/
     networks:
@@ -122,8 +129,7 @@ services:
       - SINGLE_USER_CREDENTIALS_USERNAME=${NIFI_USER}
       - SINGLE_USER_CREDENTIALS_PASSWORD=${NIFI_PASS}
     volumes:
-      - ./ProjectData:/opt/nifi/nifi-current/dataset #bindmount
-      # AGGIORNATO: Ora punta alla nuova cartella nifi/hdfs_conf
+      
       - ./nifi/hdfs_conf:/scripts #bindmount
     networks:
       - sabd_network
