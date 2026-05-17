@@ -15,7 +15,7 @@ def run(spark, sc, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
 
     # Usiamo le f-string e le costanti per evitare errori di battitura nei nomi delle colonne!
     query = f"""
-        SELECT {MONTH}, {CARRIER},
+        SELECT {MONTH} AS month, {CARRIER} AS op_unique_carrier,
                ROUND(AVG(CASE WHEN {CANCELLED} = 0 THEN {DEP_DELAY} END), 2) AS dep_delay_mean,
                MIN(CASE WHEN {CANCELLED} = 0 THEN {DEP_DELAY} END) AS dep_delay_min,
                MAX(CASE WHEN {CANCELLED} = 0 THEN {DEP_DELAY} END) AS dep_delay_max,

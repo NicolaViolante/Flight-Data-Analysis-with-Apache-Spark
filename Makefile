@@ -83,25 +83,7 @@ perf:
 	else \
 		$(SUBMIT_QUERY)benchmark_runner.py --q $(q) --api $(api) --format $${format:-csv} --times $${times:-10}; \
 	fi
-
-# 3. Scorciatoia per eseguire le Query
-query:
-	@if [ -z "$(q)" ] || [ -z "$(api)" ]; then \
-		echo "Esempio: make query q=1 api=df format=csv"; \
-	else \
-		echo "Eseguendo Query $(q) con API $(api) in formato $${format:-csv}..."; \
-		make submit script=main.py args="--q $(q) --api $(api) --format $${format:-csv}"; \
-	fi
-
-# 4. Scorciatoia per i Benchmark
-benchmark:
-	@if [ -z "$(q)" ] || [ -z "$(api)" ]; then \
-		echo "Esempio: make benchmark q=1 api=df times=30 format=csv"; \
-	else \
-		echo "Avvio Benchmark per Query $(q) con API $(api)..."; \
-		make submit script=benchmark_runner.py args="--q $(q) --api $(api) --format $${format:-csv} --times $${times:-30}"; \
-	fi
-
+	
 # ==========================================
 # ESECUZIONI BATCH E SCALABILITÀ
 # ==========================================
@@ -113,6 +95,12 @@ all_query:
 	$(SUBMIT_QUERY)main.py --q 2 --api rdd --format csv
 	$(SUBMIT_QUERY)main.py --q 2 --api df  --format csv
 	$(SUBMIT_QUERY)main.py --q 2 --api sql --format csv
+	$(SUBMIT_QUERY)main.py --q 1 --api rdd --format parquet
+	$(SUBMIT_QUERY)main.py --q 1 --api df  --format parquet
+	$(SUBMIT_QUERY)main.py --q 1 --api sql --format parquet
+	$(SUBMIT_QUERY)main.py --q 2 --api rdd --format parquet
+	$(SUBMIT_QUERY)main.py --q 2 --api df  --format parquet
+	$(SUBMIT_QUERY)main.py --q 2 --api sql --format parquet
 
 all_perf:
 	$(SUBMIT_QUERY)benchmark_runner.py --q 1 --api rdd --format csv --times 10
@@ -121,8 +109,10 @@ all_perf:
 	$(SUBMIT_QUERY)benchmark_runner.py --q 2 --api rdd --format csv --times 10
 	$(SUBMIT_QUERY)benchmark_runner.py --q 2 --api df  --format csv --times 10
 	$(SUBMIT_QUERY)benchmark_runner.py --q 2 --api sql --format csv --times 10
+	$(SUBMIT_QUERY)benchmark_runner.py --q 1 --api rdd --format parquet --times 10
 	$(SUBMIT_QUERY)benchmark_runner.py --q 1 --api df  --format parquet --times 10
 	$(SUBMIT_QUERY)benchmark_runner.py --q 1 --api sql --format parquet --times 10
+	$(SUBMIT_QUERY)benchmark_runner.py --q 2 --api rdd --format parquet --times 10
 	$(SUBMIT_QUERY)benchmark_runner.py --q 2 --api df  --format parquet --times 10
 	$(SUBMIT_QUERY)benchmark_runner.py --q 2 --api sql --format parquet --times 10
 

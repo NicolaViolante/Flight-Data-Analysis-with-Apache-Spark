@@ -66,7 +66,7 @@ services:
       - DOCKER_INFLUXDB_INIT_MODE=setup
       - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUX_USER}
       - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUX_PASS}
-      - DOCKER_INFLUXDB_INIT_ORG=sabd_org
+      - DOCKER_INFLUXDB_INIT_ORG=it.uniroma2
       - DOCKER_INFLUXDB_INIT_BUCKET=query_results
       - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUX_TOKEN}
     networks:
@@ -146,8 +146,11 @@ services:
       - sabd_network
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning
-      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+      # Mappatura diretta dei singoli file (appiattisce la struttura sul Mac)
+      - ./grafana/provisioning/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+      - ./grafana/provisioning/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
+      # Mappatura della cartella che conterrà i modelli JSON dei grafici
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASS}
@@ -157,6 +160,7 @@ services:
       - GF_LOG_FILTERS=rendering:debug
       # AGGIUNTA QUI: Il token di sicurezza!
       - GF_RENDERING_RENDERER_TOKEN=${RENDERER_TOKEN}
+      - INFLUX_TOKEN=${INFLUX_TOKEN}
     depends_on:
       - grafana-renderer
 

@@ -29,6 +29,8 @@ def run(spark, sc, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
     result = grouped.filter(F.col("num_flights") >= 500) \
                     .orderBy(F.col("arrdelay_mean").desc()) \
                     .limit(10)
+    
+    result = result.withColumnRenamed("OP_UNIQUE_CARRIER", "carrier")
 
     if TIMED: 
         result.collect()

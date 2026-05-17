@@ -1,10 +1,9 @@
 import os
 
+#Configurazione per connessione a InfluxDB
 INFLUXDB_URL    = "http://influxdb-server:8086"
-INFLUXDB_ORG    = "sabd_org"
+INFLUXDB_ORG    = "it.uniroma2"
 INFLUXDB_BUCKET = "query_results"
-
-# NESSUN VALORE DI RISERVA! Legge rigorosamente dalle variabili d'ambiente (dal tuo .env)
 INFLUXDB_TOKEN  = os.environ["INFLUX_TOKEN"]
 
 class InfluxWriterConfig:
@@ -15,7 +14,7 @@ class InfluxWriterConfig:
         self.tag_cols = tag_cols
         self.field_cols = field_cols
 
-QUERY1_HEADER = ["MONTH", "OP_UNIQUE_CARRIER", "dep_delay_mean", "dep_delay_min", "dep_delay_max", "cancellation_rate"]
+QUERY1_HEADER = ["month", "op_unique_carrier", "dep_delay_mean", "dep_delay_min", "dep_delay_max", "cancellation_rate"]
 
 QUERY1_CONFIG = InfluxWriterConfig(
     header=QUERY1_HEADER,

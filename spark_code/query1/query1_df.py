@@ -26,6 +26,9 @@ def run(spark, sc, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
         F.round((F.sum(CANCELLED) / F.count("*")) * 100, 2).alias("cancellation_rate")
     ).orderBy(MONTH, CARRIER)
 
+    result = result.withColumnRenamed("MONTH", "month") \
+                   .withColumnRenamed("OP_UNIQUE_CARRIER", "op_unique_carrier")
+    
     if TIMED: 
         result.collect()
     else:
