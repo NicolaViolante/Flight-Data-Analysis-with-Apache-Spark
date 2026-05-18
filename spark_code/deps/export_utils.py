@@ -15,7 +15,8 @@ def export_results(results: DataFrame, file_format: str, result_file: str):
     #Salvataggio risultati query in locale
     try:
         folder = "query1" if "query1" in result_file else "query2"
-        path = f"/opt/spark/work/{folder}/results.csv" #utilizzo Bind Mount per scrivere csv 
+        filename = result_file.split("/")[-1]
+        path = f"/opt/spark/work/{folder}/{filename}" #utilizzo Bind Mount per scrivere csv 
         with open(path, "w", newline="") as f:
             writer = csv.writer(f)
             writer.writerow(results.columns)

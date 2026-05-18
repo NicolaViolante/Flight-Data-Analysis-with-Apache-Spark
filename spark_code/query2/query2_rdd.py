@@ -7,7 +7,7 @@ from deps.utils import *
 def run(spark, sc, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
     start_time = time.time()
     OUTPUT_FORMAT = "csv"
-    result_file = f"hdfs://hdfs-master:54310/dataset_results/query2_rdd.{OUTPUT_FORMAT}"
+    result_file = f"hdfs://hdfs-master:54310/results/query2_{FILE_FORMAT}_rdd.{OUTPUT_FORMAT}"
 
     df = get_df(spark, dataset_path, FILE_FORMAT)
     rdd = df.rdd
@@ -22,7 +22,7 @@ def run(spark, sc, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
             
             def get_val(col_name):
                 val = row[col_name]
-                return float(val) if val is not None else 0.0
+                return val if val is not None else 0.0
                 
             arr = get_val(ARR_DELAY)
             carr = get_val(CARRIER_DELAY)
@@ -61,6 +61,6 @@ def run(spark, sc, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
         export_results(res_df, OUTPUT_FORMAT, result_file)
         
         redis_data = [dict(zip(schema, row)) for row in top10_list]
-        write_results_on_redis(redis_data, "query2_rdd")
+        write_results_on_redis(redis_data, f"query2_{FILE_FORMAT}_df")
 
     return time.time() - start_time

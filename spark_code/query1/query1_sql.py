@@ -8,7 +8,7 @@ from deps.utils import *
 def run(spark, sc, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
     start_time = time.time()
     OUTPUT_FORMAT = "csv"
-    result_file = f"hdfs://hdfs-master:54310/dataset_results/query1_sql.{OUTPUT_FORMAT}"
+    result_file = f"hdfs://hdfs-master:54310/results/query1_{FILE_FORMAT}_sql.{OUTPUT_FORMAT}"
 
     df = get_df(spark, dataset_path, FILE_FORMAT)
     df.createOrReplaceTempView("flights")
@@ -23,7 +23,7 @@ def run(spark, sc, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
         FROM flights
         WHERE {CARRIER} IN ('AA', 'DL')
         GROUP BY {MONTH}, {CARRIER}
-        ORDER BY CAST({MONTH} AS INT), {CARRIER}
+        ORDER BY {MONTH}, {CARRIER}
     """
     
     result = spark.sql(query)
@@ -32,6 +32,6 @@ def run(spark, sc, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
         result.collect()
     else:
         export_results(result, OUTPUT_FORMAT, result_file)
-        write_results_on_influxdb(result, "query1_sql", QUERY1_CONFIG)
+        write_results_on_influxdb(result, f"query1_{FILE_FORMAT}_df", QUERY1_CONFIG)
 
     return time.time() - start_time

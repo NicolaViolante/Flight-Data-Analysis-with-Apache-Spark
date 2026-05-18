@@ -8,7 +8,7 @@ from deps.utils import *
 def run(spark, sc, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
     start_time = time.time()
     OUTPUT_FORMAT = "csv"
-    result_file = f"hdfs://hdfs-master:54310/dataset_results/query2_df.{OUTPUT_FORMAT}"
+    result_file = f"hdfs://hdfs-master:54310/results/query2_{FILE_FORMAT}_df.{OUTPUT_FORMAT}"
 
     # Caricamento e cast centralizzati
     df = get_df(spark, dataset_path, FILE_FORMAT)
@@ -39,6 +39,6 @@ def run(spark, sc, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
         
         # Salvataggio su Redis
         redis_data = [row.asDict() for row in result.collect()]
-        write_results_on_redis(redis_data, "query2_df")
+        write_results_on_redis(redis_data, f"query2_{FILE_FORMAT}_df")
 
     return time.time() - start_time

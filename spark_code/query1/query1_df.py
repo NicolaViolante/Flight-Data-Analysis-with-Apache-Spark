@@ -11,7 +11,7 @@ from deps.utils import *
 def run(spark, sc, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
     start_time = time.time()
     OUTPUT_FORMAT = "csv"
-    result_file = f"hdfs://hdfs-master:54310/dataset_results/query1_df.{OUTPUT_FORMAT}"
+    result_file = f"hdfs://hdfs-master:54310/results/query1_{FILE_FORMAT}_df.{OUTPUT_FORMAT}"
 
     # 1. Caricamento e cast avvengono in una sola riga!
     df = get_df(spark, dataset_path, FILE_FORMAT)
@@ -33,6 +33,6 @@ def run(spark, sc, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
         result.collect()
     else:
         export_results(result, OUTPUT_FORMAT, result_file)
-        write_results_on_influxdb(result, "query1", QUERY1_CONFIG)
+        write_results_on_influxdb(result, f"query1_{FILE_FORMAT}_df", QUERY1_CONFIG)
 
     return time.time() - start_time

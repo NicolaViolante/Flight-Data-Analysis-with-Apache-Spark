@@ -10,7 +10,7 @@ from deps.utils import *
 def run(spark, sc, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
     start_time = time.time()
     OUTPUT_FORMAT = "csv"
-    result_file = f"hdfs://hdfs-master:54310/dataset_results/query1_rdd.{OUTPUT_FORMAT}"
+    result_file = f"hdfs://hdfs-master:54310/results/query1_{FILE_FORMAT}_rdd.{OUTPUT_FORMAT}"
 
     # get_df si occupa della lettura e di tutti i cast ai tipi corretti
     df = get_df(spark, dataset_path, FILE_FORMAT)
@@ -22,11 +22,11 @@ def run(spark, sc, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
             carrier = row[CARRIER]
             if carrier not in ["AA", "DL"]: return []
             
-            month = int(row[MONTH])
+            month = row[MONTH]
             cancelled = row[CANCELLED] if row[CANCELLED] is not None else 0
             
             if cancelled == 0 and row[DEP_DELAY] is not None:
-                delay = float(row[DEP_DELAY])
+                delay = row[DEP_DELAY]
                 return [((month, carrier), (delay, 1, delay, delay, 0, 1))]
             else:
                 return [((month, carrier), (0.0, 0, float('inf'), float('-inf'), 1, 1))]
@@ -54,6 +54,6 @@ def run(spark, sc, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
     else:
         res_df = spark.createDataFrame(final_rdd, schema=QUERY1_HEADER)
         export_results(res_df, OUTPUT_FORMAT, result_file)
-        write_results_on_influxdb(res_df, "query1_rdd", QUERY1_CONFIG)
+        write_results_on_influxdb(result, f"query1_{FILE_FORMAT}_df", QUERY1_CONFIG)
 
     return time.time() - start_time
