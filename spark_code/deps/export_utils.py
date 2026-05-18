@@ -1,4 +1,5 @@
 import csv
+import os
 from pyspark.sql.dataframe import DataFrame
 
 def export_results(results: DataFrame, file_format: str, result_file: str):
@@ -14,9 +15,10 @@ def export_results(results: DataFrame, file_format: str, result_file: str):
     
     #Salvataggio risultati query in locale
     try:
-        folder = "query1" if "query1" in result_file else "query2"
         filename = result_file.split("/")[-1]
-        path = f"/opt/spark/work/{folder}/{filename}" #utilizzo Bind Mount per scrivere csv 
+        results_dir = "/opt/spark/Results" #utilizzo Bind Mount per scrivere csv 
+        path = f"{results_dir}/{filename}"
+        os.makedirs(results_dir, exist_ok=True)
         with open(path, "w", newline="") as f:
             writer = csv.writer(f)
             writer.writerow(results.columns)

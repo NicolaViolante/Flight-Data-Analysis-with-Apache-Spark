@@ -32,8 +32,8 @@ def get_spark(app_name: str):
 
 def check_hdfs(sc: SparkContext, path_str: str):
     hadoop_conf = sc._jsc.hadoopConfiguration()
+    fs = sc._jvm.org.apache.hadoop.fs.FileSystem.get(hadoop_conf)
     path = sc._jvm.org.apache.hadoop.fs.Path(path_str)
-    fs = path.getFileSystem(hadoop_conf)
     if not fs.exists(path):
         print(f"Dataset in {path_str} not exist on HDFS")
         sys.exit(1)

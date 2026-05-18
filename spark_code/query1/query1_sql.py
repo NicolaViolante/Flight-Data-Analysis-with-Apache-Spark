@@ -32,6 +32,6 @@ def run(spark, sc, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
         result.collect()
     else:
         export_results(result, OUTPUT_FORMAT, result_file)
-        write_results_on_influxdb(result, f"query1_{FILE_FORMAT}_df", QUERY1_CONFIG)
+        write_results_on_influxdb(result, f"query1_{FILE_FORMAT}_sql", QUERY1_CONFIG)
 
     return time.time() - start_time

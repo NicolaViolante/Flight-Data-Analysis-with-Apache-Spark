@@ -52,8 +52,8 @@ def run(spark, sc, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
     if TIMED: 
         final_rdd.collect()
     else:
-        res_df = spark.createDataFrame(final_rdd, schema=QUERY1_HEADER)
-        export_results(res_df, OUTPUT_FORMAT, result_file)
-        write_results_on_influxdb(result, f"query1_{FILE_FORMAT}_df", QUERY1_CONFIG)
+        result = spark.createDataFrame(final_rdd, schema=QUERY1_HEADER)
+        export_results(result, OUTPUT_FORMAT, result_file)
+        write_results_on_influxdb(result, f"query1_{FILE_FORMAT}_rdd", QUERY1_CONFIG)
 
     return time.time() - start_time

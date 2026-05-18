@@ -44,6 +44,17 @@ services:
     networks:
       - sabd_network
 
+  slave3:
+    image: matnar/hadoop
+    container_name: hdfs-slave3
+    platform: linux/amd64      # OBBLIGATORIO PER MAC M4
+    tty: true
+    stdin_open: true
+    ports:
+      - "9862:9864" #porta mac:porta container
+    networks:
+      - sabd_network
+
   # ==========================================
   # 2. SERVING LAYER (Redis & InfluxDB)
   # ==========================================
@@ -91,8 +102,11 @@ services:
     environment:
       - HDFS_URL=hdfs://hdfs-master:54310 # indirizzo del container
       - INFLUX_TOKEN=${INFLUX_TOKEN}
+      - HADOOP_CONF_DIR=/opt/spark/custom_hadoop_conf
     volumes:
       - ./spark_code:/opt/spark/work/ # bind mount
+      - ./hdfs_conf:/opt/spark/custom_hadoop_conf
+      - ./Results:/opt/spark/Results
     networks:
       - sabd_network
 
@@ -110,8 +124,11 @@ services:
       - HDFS_URL=hdfs://hdfs-master:54310
       - INFLUX_TOKEN=${INFLUX_TOKEN}
       - SPARK_WORKER_DIR=/tmp/spark-logs
+      - HADOOP_CONF_DIR=/opt/spark/custom_hadoop_conf
     volumes:
       - ./spark_code:/opt/spark/work/
+      - ./hdfs_conf:/opt/spark/custom_hadoop_conf
+      - ./Results:/opt/spark/Results
     networks:
       - sabd_network
 
@@ -129,8 +146,7 @@ services:
       - SINGLE_USER_CREDENTIALS_USERNAME=${NIFI_USER}
       - SINGLE_USER_CREDENTIALS_PASSWORD=${NIFI_PASS}
     volumes:
-      
-      - ./nifi/hdfs_conf:/scripts #bindmount
+      - ./hdfs_conf:/scripts #bindmount
     networks:
       - sabd_network
 

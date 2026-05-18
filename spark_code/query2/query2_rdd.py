@@ -61,6 +61,6 @@ def run(spark, sc, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
         export_results(res_df, OUTPUT_FORMAT, result_file)
         
         redis_data = [dict(zip(schema, row)) for row in top10_list]
-        write_results_on_redis(redis_data, f"query2_{FILE_FORMAT}_df")
+        write_results_on_redis(redis_data, f"query2_{FILE_FORMAT}_rdd")
 
     return time.time() - start_time
