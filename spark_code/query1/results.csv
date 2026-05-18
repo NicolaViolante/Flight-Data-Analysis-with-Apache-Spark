@@ -1,4 +1,4 @@
-MONTH,OP_UNIQUE_CARRIER,dep_delay_mean,dep_delay_min,dep_delay_max,cancellation_rate
+month,op_unique_carrier,dep_delay_mean,dep_delay_min,dep_delay_max,cancellation_rate
 1,AA,12.89,-34.0,3298.0,3.73
 1,DL,12.83,-30.0,1209.0,2.8
 2,AA,13.28,-27.0,3403.0,1.32

@@ -1,6 +1,6 @@
 import time
 
-from deps.hdfs_utils import write_results_on_hdfs
+from deps.export_utils import export_results
 from deps.redis_utils import write_results_on_redis
 from deps.utils import *
 
@@ -58,7 +58,7 @@ def run(spark, sc, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
                   "weather_delay_mean", "nas_delay_mean", "security_delay_mean", "late_aircraft_delay_mean"]
         
         res_df = spark.createDataFrame(top10_list, schema=schema)
-        write_results_on_hdfs(res_df, OUTPUT_FORMAT, result_file)
+        export_results(res_df, OUTPUT_FORMAT, result_file)
         
         redis_data = [dict(zip(schema, row)) for row in top10_list]
         write_results_on_redis(redis_data, "query2_rdd")

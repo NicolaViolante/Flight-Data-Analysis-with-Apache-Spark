@@ -1,7 +1,7 @@
 import time
 from pyspark.sql import functions as F
 
-from deps.hdfs_utils import write_results_on_hdfs
+from deps.export_utils import export_results
 from deps.redis_utils import write_results_on_redis
 from deps.utils import *
 
@@ -35,7 +35,7 @@ def run(spark, sc, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
     if TIMED: 
         result.collect()
     else:
-        write_results_on_hdfs(result, OUTPUT_FORMAT, result_file)
+        export_results(result, OUTPUT_FORMAT, result_file)
         
         # Salvataggio su Redis
         redis_data = [row.asDict() for row in result.collect()]

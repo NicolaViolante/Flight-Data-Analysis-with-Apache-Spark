@@ -1,6 +1,6 @@
 import time
 
-from deps.hdfs_utils import write_results_on_hdfs
+from deps.export_utils import export_results
 from deps.influxdb_utils import write_results_on_influxdb
 from deps.config import QUERY1_CONFIG, QUERY1_HEADER
 
@@ -53,7 +53,7 @@ def run(spark, sc, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
         final_rdd.collect()
     else:
         res_df = spark.createDataFrame(final_rdd, schema=QUERY1_HEADER)
-        write_results_on_hdfs(res_df, OUTPUT_FORMAT, result_file)
+        export_results(res_df, OUTPUT_FORMAT, result_file)
         write_results_on_influxdb(res_df, "query1_rdd", QUERY1_CONFIG)
 
     return time.time() - start_time
