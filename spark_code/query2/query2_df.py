@@ -1,18 +1,11 @@
-import time
 from pyspark.sql import functions as F
-
-from deps.export_utils import export_results
-from deps.redis_utils import write_results_on_redis
 from deps.utils import *
 
-def run(spark, sc, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
-    start_time = time.time()
-    OUTPUT_FORMAT = "csv"
-    result_file = f"hdfs://hdfs-master:54310/results/query2_{FILE_FORMAT}_df.{OUTPUT_FORMAT}"
-
-    # Caricamento e cast centralizzati
-    df = get_df(spark, dataset_path, FILE_FORMAT)
-
+def process_query2_df(df, _spark):
+    """
+    Logica core per Query 2 usando l'API DataFrame.
+    Calcola le medie dei ritardi e la classifica delle top 10 compagnie.
+    """
     # Filtro usando le costanti
     df_valid = df.filter((F.col(CANCELLED) == 0) & (F.col(DIVERTED) == 0))
 
@@ -30,15 +23,17 @@ def run(spark, sc, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
                     .orderBy(F.col("arrdelay_mean").desc()) \
                     .limit(10)
     
-    result = result.withColumnRenamed("OP_UNIQUE_CARRIER", "carrier")
+    return result.withColumnRenamed("OP_UNIQUE_CARRIER", "carrier")
 
-    if TIMED: 
-        result.collect()
-    else:
-        export_results(result, OUTPUT_FORMAT, result_file)
-        
-        # Salvataggio su Redis
-        redis_data = [row.asDict() for row in result.collect()]
-        write_results_on_redis(redis_data, f"query2_{FILE_FORMAT}_df")
 
-    return time.time() - start_time
+def run(spark, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
+    """Entry point universale che richiama il wrapper in utils.py"""
+    return run_query(
+        spark=spark, 
+        dataset_path=dataset_path, 
+        file_format=FILE_FORMAT, 
+        timed=TIMED, 
+        query_num=2, 
+        api_name="df", 
+        core_logic_func=process_query2_df
+    )

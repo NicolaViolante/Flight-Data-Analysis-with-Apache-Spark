@@ -1,38 +1,18 @@
-import time
 from pyspark.sql import functions as F
-
-from deps.export_utils import export_results
-from deps.influxdb_utils import write_results_on_influxdb
-from deps.config import QUERY1_CONFIG
-
-# Magia: Importiamo tutto da utils!
 from deps.utils import *
 
-def run(spark, sc, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
-    start_time = time.time()
-    OUTPUT_FORMAT = "csv"
-    result_file = f"hdfs://hdfs-master:54310/results/query1_{FILE_FORMAT}_df.{OUTPUT_FORMAT}"
+def process_query1_df(df, _spark):
+    df_filtered = df.filter(F.col(CARRIER).isin("AA", "DL")) #filtra le righe, mantenendo solamente valori di AA e DL 
 
-    # 1. Caricamento e cast avvengono in una sola riga!
-    df = get_df(spark, dataset_path, FILE_FORMAT)
-
-    # 2. Uso delle costanti (CARRIER, CANCELLED, etc.) invece delle stringhe
-    df_filtered = df.filter(F.col(CARRIER).isin("AA", "DL"))
-
-    result = df_filtered.groupBy(MONTH, CARRIER).agg(
-        F.round(F.mean(F.when(F.col(CANCELLED) == 0, F.col(DEP_DELAY))), 2).alias("dep_delay_mean"),
+    result = df_filtered.groupBy(MONTH, CARRIER).agg( #innesca lo shuffle dei dati aggregando per mese e compagnia, successivamente aggrega i valori (wide)
+        F.round(F.mean(F.when(F.col(CANCELLED) == 0, F.col(DEP_DELAY))), 5).alias("dep_delay_mean"),
         F.min(F.when(F.col(CANCELLED) == 0, F.col(DEP_DELAY))).alias("dep_delay_min"),
         F.max(F.when(F.col(CANCELLED) == 0, F.col(DEP_DELAY))).alias("dep_delay_max"),
-        F.round((F.sum(CANCELLED) / F.count("*")) * 100, 2).alias("cancellation_rate")
-    ).orderBy(MONTH, CARRIER)
+        F.round((F.sum(CANCELLED) / F.count("*")) * 100, 5).alias("cancellation_rate")
+    ).orderBy(MONTH, CARRIER) # ordina dataframe risultante per mese e per compagnia (a parità di mese) (wide)
 
-    result = result.withColumnRenamed("MONTH", "month") \
-                   .withColumnRenamed("OP_UNIQUE_CARRIER", "op_unique_carrier")
-    
-    if TIMED: 
-        result.collect()
-    else:
-        export_results(result, OUTPUT_FORMAT, result_file)
-        write_results_on_influxdb(result, f"query1_{FILE_FORMAT}_df", QUERY1_CONFIG)
+    return result.withColumnRenamed("MONTH", "month").withColumnRenamed("OP_UNIQUE_CARRIER", "op_unique_carrier")
 
-    return time.time() - start_time
+
+def run(spark, dataset_path: str, file_format: str, timed: bool) -> float:
+    return run_query(spark, dataset_path, file_format, timed, query_num=1, api_name="df", core_logic_func=process_query1_df)

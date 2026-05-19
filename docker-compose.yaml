@@ -1,63 +1,60 @@
-networks: #per far parlare tra loro i container utilizzando solo il loro nome, non è necessario conoscere ip
-  sabd_network: #crea rete virtuale privata per far comunicare i container
-    driver: bridge
+networks: # per far parlare tra loro i container utilizzando solo il loro nome, non è necessario conoscere ip (dichiara la rete virtuale)
+  sabd_network: # crea rete virtuale privata per far comunicare i container (è il nome assegnato)
+    driver: bridge # ponte virtuale all'interno del pc, per comunicare bastano i nomi
 
-volumes: #prepara dischi fissi virtuali che persistono in caso di eliminazione container
+volumes: # prepara dischi fissi virtuali che persistono in caso di eliminazione container
   influxdb_data:
   grafana_data:
 
 services:
-  # ==========================================
-  # 1. HDFS (Storage Layer) - Immagini del Prof. Nardelli
-  # ==========================================
+  # PERSISTENCE LAYER (HDFS)
   master:
-    image: matnar/hadoop
+    image: matnar/hadoop # Scarica immagine
     container_name: hdfs-master
-    platform: linux/amd64      # OBBLIGATORIO PER MAC M4
+    platform: linux/amd64 # Obbligatorio per il mio pc dato che ha processore ARM
     tty: true
-    stdin_open: true #tty e stdin_open fanno in modo che il container rimanga sempre acceso
+    stdin_open: true # tty e stdin_open mantengono aperto il terminale del container per non farlo spegnere
     ports:
-      - "9870:9870"
-      - "54310:54310" #porta per Spark e NiFi
+      - "9870:9870" # porta per UI web
+      - "54310:54310" # porta per Spark e NiFi
     networks:
       - sabd_network
 
   slave1:
     image: matnar/hadoop
     container_name: hdfs-slave1
-    platform: linux/amd64      # OBBLIGATORIO PER MAC M4
+    platform: linux/amd64      
     tty: true
     stdin_open: true
     ports:
-      - "9864:9864" #porta mac:porta container
+      - "9864:9864" 
     networks:
       - sabd_network
 
   slave2:
     image: matnar/hadoop
     container_name: hdfs-slave2
-    platform: linux/amd64      # OBBLIGATORIO PER MAC M4
+    platform: linux/amd64 
     tty: true
     stdin_open: true
     ports:
-      - "9863:9864" #porta mac:porta container
+      - "9863:9864" 
     networks:
       - sabd_network
 
   slave3:
     image: matnar/hadoop
     container_name: hdfs-slave3
-    platform: linux/amd64      # OBBLIGATORIO PER MAC M4
+    platform: linux/amd64 
     tty: true
     stdin_open: true
     ports:
-      - "9862:9864" #porta mac:porta container
+      - "9862:9864" 
     networks:
       - sabd_network
 
-  # ==========================================
-  # 2. SERVING LAYER (Redis & InfluxDB)
-  # ==========================================
+
+  # SERVING LAYER (Redis & InfluxDB)
   redis:
     image: redis:alpine
     container_name: redis-server
@@ -74,39 +71,37 @@ services:
     volumes:
       - influxdb_data:/var/lib/influxdb2 #il percorso è dove influx salva i file di database
     environment: #autosetup di influx
-      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_MODE=setup #per fare setup automatico
       - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUX_USER}
       - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUX_PASS}
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUX_TOKEN}
       - DOCKER_INFLUXDB_INIT_ORG=it.uniroma2
       - DOCKER_INFLUXDB_INIT_BUCKET=query_results
-      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUX_TOKEN}
     networks:
       - sabd_network
 
-  # ==========================================
-  # 3. PROCESSING LAYER (Spark Ufficiale)
-  # ==========================================
+  # 3. PROCESSING LAYER (Spark)
   spark-master:
     build: 
       context: ./spark_code
       dockerfile: Dockerfile
     container_name: spark-master
     depends_on:
-      - master      # Aspetta HDFS
-      - influxdb    # Aspetta il database delle serie storiche
-      - redis       # Aspetta la cache
-    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master"] # per comportarsi da master
+      - master # aspetta HDFS
+      - influxdb 
+      - redis  
+    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master"] # per comportarsi da master (forza il processo)
     ports:
-      - "8080:8080"
-      - "7077:7077"
+      - "8080:8080" # dashboard web di Spark
+      - "7077:7077" # porta che i worker usano per comunicare con il master
     environment:
       - HDFS_URL=hdfs://hdfs-master:54310 # indirizzo del container
+      - HADOOP_CONF_DIR=/opt/spark/custom_hadoop_conf #cartella con configurazione HDFS
       - INFLUX_TOKEN=${INFLUX_TOKEN}
-      - HADOOP_CONF_DIR=/opt/spark/custom_hadoop_conf
     volumes:
       - ./spark_code:/opt/spark/work/ # bind mount
-      - ./hdfs_conf:/opt/spark/custom_hadoop_conf
-      - ./Results:/opt/spark/Results
+      - ./hdfs_conf:/opt/spark/custom_hadoop_conf # bind mount
+      - ./Results:/opt/spark/Results # bind mount
     networks:
       - sabd_network
 
@@ -115,30 +110,27 @@ services:
       context: ./spark_code
       dockerfile: Dockerfile
     depends_on:
-      - spark-master #si accende solo dopo l avvio del master
-    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.worker.Worker", "spark://spark-master:7077"] # forza ad essere un worker, comunica al master alla porta 7077
+      - spark-master # aspetta il master
+    command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.worker.Worker", "spark://spark-master:7077"] # per comportarsi da master (forza il processo); comunicazione con master sulla porta 7077
     environment:
       - SPARK_WORKER_MEMORY=4G  # il worker può usare al massimo 4 gb di ram
       - SPARK_WORKER_CORES=2 # il worker può usare al massimo 2 core
-      # AGGIUNTA QUI: Anche i worker devono sapere dove si trova Hadoop
       - HDFS_URL=hdfs://hdfs-master:54310
+      - HADOOP_CONF_DIR=/opt/spark/custom_hadoop_conf
       - INFLUX_TOKEN=${INFLUX_TOKEN}
       - SPARK_WORKER_DIR=/tmp/spark-logs
-      - HADOOP_CONF_DIR=/opt/spark/custom_hadoop_conf
     volumes:
-      - ./spark_code:/opt/spark/work/
-      - ./hdfs_conf:/opt/spark/custom_hadoop_conf
-      - ./Results:/opt/spark/Results
+      - ./spark_code:/opt/spark/work/ # bind mount
+      - ./hdfs_conf:/opt/spark/custom_hadoop_conf # bind mount
+      - ./Results:/opt/spark/Results # bind mount
     networks:
       - sabd_network
 
-  # ==========================================
-  # 4. INGESTION (NiFi)
-  # ==========================================
+  # INGESTION (NiFi)
   nifi:
     build: 
-      context: ./nifi      # Dice a Docker di guardare nella tua cartella nifi
-      dockerfile: Dockerfile # E di usare il file che abbiamo appena creato
+      context: ./nifi
+      dockerfile: Dockerfile
     container_name: nifi-server
     ports:
       - "8443:8443"
@@ -150,35 +142,30 @@ services:
     networks:
       - sabd_network
 
-  # ==========================================
-  # 4. VISUALIZATION (Grafana + Image Renderer)
-  # ==========================================
+  # 4. VISUALIZATION (Grafana + Renderer)
   grafana:
     image: grafana/grafana:latest
     container_name: grafana-server
+    depends_on:
+      - grafana-renderer
     ports:
       - "3000:3000"
-    networks:
-      - sabd_network
-    volumes:
-      - grafana_data:/var/lib/grafana
-      # Mappatura diretta dei singoli file (appiattisce la struttura sul Mac)
-      - ./grafana/provisioning/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
-      - ./grafana/provisioning/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
-      # Mappatura della cartella che conterrà i modelli JSON dei grafici
-      - ./grafana/dashboards:/var/lib/grafana/dashboards
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_USER}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASS}
-      - GF_INSTALL_PLUGINS=redis-datasource
+      - GF_INSTALL_PLUGINS=redis-datasource # per far leggere dati da Redis
       - GF_RENDERING_SERVER_URL=http://grafana-renderer:8081/render
       - GF_RENDERING_CALLBACK_URL=http://grafana:3000/
       - GF_LOG_FILTERS=rendering:debug
-      # AGGIUNTA QUI: Il token di sicurezza!
       - GF_RENDERING_RENDERER_TOKEN=${RENDERER_TOKEN}
       - INFLUX_TOKEN=${INFLUX_TOKEN}
-    depends_on:
-      - grafana-renderer
+    volumes:
+      - grafana_data:/var/lib/grafana # per rendere db interno di Grafana persistente
+      - ./grafana/provisioning/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+      - ./grafana/provisioning/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - sabd_network
 
   grafana-renderer:
     image: grafana/grafana-image-renderer:latest
@@ -186,8 +173,7 @@ services:
     platform: linux/amd64
     ports:
       - "8081:8081"
+    environment:
+      - AUTH_TOKEN=${RENDERER_TOKEN}
     networks:
       - sabd_network
-    environment:
-      # AGGIUNTA QUI: Anche il renderer deve conoscere il token!
-      - AUTH_TOKEN=${RENDERER_TOKEN}

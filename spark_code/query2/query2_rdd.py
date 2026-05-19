@@ -1,15 +1,11 @@
-import time
-
-from deps.export_utils import export_results
-from deps.redis_utils import write_results_on_redis
 from deps.utils import *
+from deps.config import QUERY2_HEADER
 
-def run(spark, sc, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
-    start_time = time.time()
-    OUTPUT_FORMAT = "csv"
-    result_file = f"hdfs://hdfs-master:54310/results/query2_{FILE_FORMAT}_rdd.{OUTPUT_FORMAT}"
-
-    df = get_df(spark, dataset_path, FILE_FORMAT)
+def process_query2_rdd(df, spark):
+    """
+    Logica core per Query 2 usando l'API RDD.
+    Esegue il MapReduce e restituisce il DataFrame finale con le Top 10 compagnie.
+    """
     rdd = df.rdd
 
     def parse_row(row):
@@ -53,14 +49,17 @@ def run(spark, sc, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
                             .sortBy(lambda x: x[2], ascending=False) \
                             .take(10)
 
-    if not TIMED: 
-        schema = ["carrier", "num_flights", "arrdelay_mean", "carrier_delay_mean", 
-                  "weather_delay_mean", "nas_delay_mean", "security_delay_mean", "late_aircraft_delay_mean"]
-        
-        res_df = spark.createDataFrame(top10_list, schema=schema)
-        export_results(res_df, OUTPUT_FORMAT, result_file)
-        
-        redis_data = [dict(zip(schema, row)) for row in top10_list]
-        write_results_on_redis(redis_data, f"query2_{FILE_FORMAT}_rdd")
+    return spark.createDataFrame(top10_list, schema=QUERY2_HEADER)
 
-    return time.time() - start_time
+
+def run(spark, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
+    """Entry point universale che richiama il wrapper in utils.py"""
+    return run_query(
+        spark=spark, 
+        dataset_path=dataset_path, 
+        file_format=FILE_FORMAT, 
+        timed=TIMED, 
+        query_num=2, 
+        api_name="rdd", 
+        core_logic_func=process_query2_rdd
+    )

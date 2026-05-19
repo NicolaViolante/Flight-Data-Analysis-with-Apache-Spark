@@ -15,6 +15,7 @@ class InfluxWriterConfig:
         self.field_cols = field_cols
 
 QUERY1_HEADER = ["month", "op_unique_carrier", "dep_delay_mean", "dep_delay_min", "dep_delay_max", "cancellation_rate"]
+QUERY2_HEADER = ["carrier", "num_flights", "arrdelay_mean", "carrier_delay_mean", "weather_delay_mean", "nas_delay_mean", "security_delay_mean", "late_aircraft_delay_mean"]
 
 QUERY1_CONFIG = InfluxWriterConfig(
     header=QUERY1_HEADER,

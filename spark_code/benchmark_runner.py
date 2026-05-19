@@ -29,10 +29,10 @@ if __name__ == "__main__":
     print(f"Benchmark start: Query {args.q}, api: {args.api}, format: {args.format}")
     client, write_api = get_influx_client()
     for num_run in range(1, args.times + 1):
-        spark, sc = get_spark(f"Benchmark Q{args.q}-{args.api} Run {num_run}") #start della SparkSession (per non far usare dati in RAM precedenti)
+        spark = get_spark(f"benchmark_query{args.q}_{args.format}_{args.api}_run{num_run}") #start della SparkSession (per non far usare dati in RAM precedenti)
         if num_run == 1:
-            check_hdfs(sc, dataset_path)
-        run_time = query.run(spark, sc, dataset_path, args.format, TIMED=True) #evita salvataggio dei dati
+            check_hdfs(spark, dataset_path)
+        run_time = query.run(spark, dataset_path, args.format, TIMED=True) #evita salvataggio dei dati
         spark.stop() #per svuotare la RAM e non inficiare i risultati dei successivi giri
         print_logs(run_time, num_run, args.times)
         if write_api:

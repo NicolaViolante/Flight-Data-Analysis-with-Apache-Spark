@@ -10,12 +10,12 @@ if __name__ =="__main__":
     args = arg_parser.parse_args()
 
     try: 
-        query = importlib.import_module(f'query{args.q}.query{args.q}_{args.api}') #importazione a runtime della query da eseguire
+        query = importlib.import_module(f'query{args.q}.query{args.q}_{args.api}') # importazione a runtime della query da eseguire
     except KeyError: 
         raise Exception("Not legit combination")
-    spark, sc = get_spark(f"Query {args.q} - {args.api}") #creazione SparkSession per la query specifica
+    spark = get_spark(f"query{args.q}_{args.format}_{args.api}") # creazione SparkSession per la query specifica
     dataset_path = f"hdfs://hdfs-master:54310/dataset_{args.format}/"
-    check_hdfs(sc, dataset_path) 
-    execution_time = query.run(spark, sc, dataset_path, args.format, TIMED=False)
+    check_hdfs(spark, dataset_path) 
+    execution_time = query.run(spark, dataset_path, args.format, TIMED=False)
     print(f"Execution time: {execution_time:.2f} seconds")
     spark.stop()

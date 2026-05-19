@@ -1,16 +1,10 @@
-import time
-
-from deps.export_utils import export_results
-from deps.influxdb_utils import write_results_on_influxdb
-from deps.config import QUERY1_CONFIG
 from deps.utils import *
 
-def run(spark, sc, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
-    start_time = time.time()
-    OUTPUT_FORMAT = "csv"
-    result_file = f"hdfs://hdfs-master:54310/results/query1_{FILE_FORMAT}_sql.{OUTPUT_FORMAT}"
-
-    df = get_df(spark, dataset_path, FILE_FORMAT)
+def process_query1_sql(df, spark):
+    """
+    Logica core per Query 1 usando Spark SQL.
+    Registra la view temporanea e lancia la query testuale.
+    """
     df.createOrReplaceTempView("flights")
 
     # Usiamo le f-string e le costanti per evitare errori di battitura nei nomi delle colonne!
@@ -26,12 +20,17 @@ def run(spark, sc, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
         ORDER BY {MONTH}, {CARRIER}
     """
     
-    result = spark.sql(query)
+    return spark.sql(query)
 
-    if TIMED: 
-        result.collect()
-    else:
-        export_results(result, OUTPUT_FORMAT, result_file)
-        write_results_on_influxdb(result, f"query1_{FILE_FORMAT}_sql", QUERY1_CONFIG)
 
-    return time.time() - start_time
+def run(spark, dataset_path: str, FILE_FORMAT: str, TIMED: bool) -> float:
+    """Entry point universale che richiama il wrapper in utils.py"""
+    return run_query(
+        spark=spark, 
+        dataset_path=dataset_path, 
+        file_format=FILE_FORMAT, 
+        timed=TIMED, 
+        query_num=1, 
+        api_name="sql", 
+        core_logic_func=process_query1_sql
+    )
