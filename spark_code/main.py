@@ -16,6 +16,6 @@ if __name__ =="__main__":
     spark = get_spark(f"query{args.q}_{args.format}_{args.api}") # creazione SparkSession per la query specifica
     dataset_path = f"hdfs://hdfs-master:54310/dataset_{args.format}/"
     check_hdfs(spark, dataset_path) 
-    execution_time = query.run(spark, dataset_path, args.format, TIMED=False)
+    execution_time = query.run(spark, dataset_path, args.format, timed=False)
     print(f"Execution time: {execution_time:.2f} seconds")
     spark.stop()

@@ -1,0 +1,177 @@
+{
+  "uid": "airnine_dash_01",
+  "title": "Airnine Transportation Dashboard",
+  "schemaVersion": 38,
+  "timezone": "browser",
+  "refresh": "10s",
+  "time": {
+    "from": "2024-12-31T23:00:00.000Z",
+    "to": "2025-04-30T21:59:59.000Z"
+  },
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Query 1 - Ritardo Medio in Partenza (Minutes)",
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "datasource": {
+        "type": "influxdb",
+        "uid": "InfluxDB"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"query_results\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"query1_csv_df\")\n  |> filter(fn: (r) => r[\"_field\"] == \"dep_delay_mean\")",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "showPoints": "auto",
+            "spanNulls": false
+          }
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Query 1 - Tasso di Cancellazione (%)",
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 10
+      },
+      "id": 2,
+      "datasource": {
+        "type": "influxdb",
+        "uid": "InfluxDB"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"query_results\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_measurement\"] == \"query1_csv_df\")\n  |> filter(fn: (r) => r[\"_field\"] == \"cancellation_rate\")",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "showPoints": "auto"
+          }
+        }
+      }
+    },
+    {
+      "type": "barchart",
+      "title": "Query 2 - Classifica Ritardo in Arrivo",
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 3,
+      "datasource": {
+        "type": "redis-datasource",
+        "uid": "Redis"
+      },
+      "targets": [
+        {
+          "command": "get",
+          "keyName": "sabd:results:query2_df",
+          "type": "command",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "replace": true,
+            "source": "sabd:results:query2_df"
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "carrier",
+                "arrdelay_mean"
+              ]
+            }
+          }
+        }
+      ],
+      "options": {
+        "orientation": "auto",
+        "xField": "carrier"
+      }
+    },
+    {
+      "type": "barchart",
+      "title": "Query 2 - Incidenza Cause di Ritardo",
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 10
+      },
+      "id": 4,
+      "datasource": {
+        "type": "redis-datasource",
+        "uid": "Redis"
+      },
+      "targets": [
+        {
+          "command": "get",
+          "keyName": "sabd:results:query2_df",
+          "type": "command",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "replace": true,
+            "source": "sabd:results:query2_df"
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "carrier",
+                "carrier_delay_mean",
+                "weather_delay_mean",
+                "nas_delay_mean",
+                "security_delay_mean",
+                "late_aircraft_delay_mean"
+              ]
+            }
+          }
+        }
+      ],
+      "options": {
+        "orientation": "auto",
+        "stacking": "normal",
+        "xField": "carrier"
+      }
+    }
+  ]
+}
