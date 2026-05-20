@@ -7,8 +7,8 @@ def process_query1_rdd(df, spark):
     def parse_row(row):
         try:
             carrier = row[CARRIER]
-            if carrier not in ["AA", "DL"]: return [] # se la compagnia non fa parte di quelle che analiziamo la funzione ritorna una lista vuota
             month = row[MONTH]
+            if carrier not in ["AA", "DL"] or month is None: return [] # se la compagnia non fa parte di quelle che analiziamo la funzione ritorna una lista vuota
             cancelled = row[CANCELLED] if row[CANCELLED] is not None else 0 # per sicurezza i Null interpretati come voli non cancellati
             if cancelled == 0 and row[DEP_DELAY] is not None:
                 delay_sum = row[DEP_DELAY]
@@ -21,23 +21,21 @@ def process_query1_rdd(df, spark):
             return []
 
     mapped_rdd = rdd.flatMap(parse_row)
-    reduced_rdd = mapped_rdd.reduceByKey(lambda x, y: (
+    reduced_rdd = mapped_rdd.reduceByKey(lambda x, y: ( # wide transformation
             x[0] + y[0], x[1] + y[1], min(x[2], y[2]), max(x[3], y[3]), x[4] + y[4]
         ))
 
-    def format_results(item):
-        (month, carrier), stats = item
-        sum_delay, count_non_canc, min_d, max_d, sum_canc = stats
-        count_tot = count_non_canc + sum_canc
-        avg_delay = round(sum_delay / count_non_canc, 2) if count_non_canc > 0 else 0.0
-        min_d = min_d if count_non_canc > 0 else 0.0
-        max_d = max_d if count_non_canc > 0 else 0.0
-        canc_rate = round((sum_canc / count_tot) * 100, 2) if count_tot > 0 else 0.0
-        return (str(month), carrier, float(avg_delay), float(min_d), float(max_d), float(canc_rate))
+    def format_results(item): #item è un tupla di tuple che ha questa forma ((month, carrier), (delay_sum, 1, delay_min, delay_max, 0))
+        (month, carrier), stats = item 
+        delay_sum, count_non_canc, delay_min, delay_max, count_canc = stats
+        count_tot = count_non_canc + count_canc
+        avg_delay = round(delay_sum / count_non_canc, 5) if count_non_canc > 0 else 0.0
+        delay_min = delay_min if count_non_canc > 0 else 0.0
+        delay_max = delay_max if count_non_canc > 0 else 0.0
+        canc_rate = round((count_canc / count_tot) * 100, 5) if count_tot > 0 else 0.0
+        return (month, carrier, avg_delay, delay_min, delay_max, canc_rate)
+    final_rdd = reduced_rdd.map(format_results).sortBy(lambda x: (x[0], x[1]))
 
-    final_rdd = reduced_rdd.map(format_results).sortBy(lambda x: (int(x[0]), x[1]))
-
-    # Fondamentale: Trasformiamo l'RDD in DataFrame prima di passarlo al Wrapper
     return spark.createDataFrame(final_rdd, schema=QUERY1_HEADER)
 
 

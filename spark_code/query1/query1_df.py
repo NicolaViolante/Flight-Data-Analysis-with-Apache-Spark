@@ -14,5 +14,6 @@ def process_query1_df(df, _spark):
     return result.withColumnRenamed("MONTH", "month").withColumnRenamed("OP_UNIQUE_CARRIER", "op_unique_carrier")
 
 
+
 def run(spark, dataset_path: str, file_format: str, timed: bool) -> float:
     return run_query(spark, dataset_path, file_format, timed, query_num=1, api_name="df", core_logic_func=process_query1_df)
