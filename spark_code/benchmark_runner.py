@@ -20,6 +20,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("--api", type=str, choices=["rdd", "df", "sql"], required=True)
     arg_parser.add_argument("--format", type=str, choices=["csv", "parquet"], required=True)
     arg_parser.add_argument("--times", type=int, default=30, required=False)
+    arg_parser.add_argument("--workers", type=int, default=1, required=False)
     args = arg_parser.parse_args()
     try: 
         query = importlib.import_module(f'query{args.q}.query{args.q}_{args.api}')
@@ -36,7 +37,7 @@ if __name__ == "__main__":
         spark.stop() #per svuotare la RAM e non inficiare i risultati dei successivi giri
         print_logs(run_time, num_run, args.times)
         if write_api:
-            write_job_time_on_influxdb(write_api, f"perf_query{args.q}_{args.api}_{args.format}", run_time, num_run) #salvataggio dei risultati su Influx
+            write_job_time_on_influxdb(write_api, f"perf_query{args.q}_{args.api}_{args.format}", run_time, num_run, args.workers) #salvataggio dei risultati su Influx
     if client:
         client.close()    
     print("\nBenchmark completed")

@@ -44,11 +44,11 @@ def write_results_on_influxdb(results: DataFrame, measurement: str, config: Infl
 
 
 
-def write_job_time_on_influxdb(write_api, measurement: str, job_time: float, run_num: int):
+def write_job_time_on_influxdb(write_api, measurement: str, job_time: float, run_num: int, workers: int):
 
     try:
         # Crea un punto di misurazione per il tempo
-        point = Point(measurement).tag("run_type", "benchmark").field("execution_time", float(job_time)).field("run_number", int(run_num))
+        point = Point(measurement).tag("run_type", "benchmark").tag("workers", str(workers)).field("execution_time", float(job_time)).field("run_number", int(run_num))
         write_api.write(bucket=INFLUXDB_BUCKET, org=INFLUXDB_ORG, record=point)
     except Exception as e:
         print(f"Error saving benchmark to InfluxDB: {e}")
