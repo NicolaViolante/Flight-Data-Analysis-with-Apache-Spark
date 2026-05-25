@@ -6,11 +6,11 @@ def process_query2_sql(df, spark):
         SELECT {CARRIER} AS carrier,
                COUNT(*) AS num_flights,
                ROUND(AVG({ARR_DELAY}), 5) AS arrdelay_mean,
-               ROUND(AVG(COALESCE({CARRIER_DELAY}, 0.0)), 5) AS carrier_delay_mean,
-               ROUND(AVG(COALESCE({WEATHER_DELAY}, 0.0)), 5) AS weather_delay_mean,
-               ROUND(AVG(COALESCE({NAS_DELAY}, 0.0)), 5) AS nas_delay_mean,
-               ROUND(AVG(COALESCE({SECURITY_DELAY}, 0.0)), 5) AS security_delay_mean,
-               ROUND(AVG(COALESCE({LATE_AIRCRAFT_DELAY}, 0.0)), 5) AS late_aircraft_delay_mean
+               ROUND(AVG({CARRIER_DELAY}), 5) AS carrier_delay_mean,
+               ROUND(AVG({WEATHER_DELAY}), 5) AS weather_delay_mean,
+               ROUND(AVG({NAS_DELAY}), 5) AS nas_delay_mean,
+               ROUND(AVG({SECURITY_DELAY}), 5) AS security_delay_mean,
+               ROUND(AVG({LATE_AIRCRAFT_DELAY}), 5) AS late_aircraft_delay_mean
         FROM flights
         WHERE {CANCELLED} = 0 AND {DIVERTED} = 0
         GROUP BY {CARRIER}

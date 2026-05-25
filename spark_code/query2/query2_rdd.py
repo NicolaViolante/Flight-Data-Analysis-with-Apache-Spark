@@ -9,15 +9,12 @@ def process_query2_rdd(df, spark):
             div = row[DIVERTED] if row[DIVERTED] is not None else 0
             if canc == 1 or div == 1: return []
             carrier = row[CARRIER]
-            def get_val(col_name):
-                val = row[col_name]
-                return val if val is not None else 0.0
-            arr = get_val(ARR_DELAY)
-            carr = get_val(CARRIER_DELAY)
-            wea = get_val(WEATHER_DELAY)
-            nas = get_val(NAS_DELAY)
-            sec = get_val(SECURITY_DELAY)
-            late = get_val(LATE_AIRCRAFT_DELAY)
+            arr = row[ARR_DELAY]
+            carr = row[CARRIER_DELAY]
+            wea = row[WEATHER_DELAY]
+            nas = row[NAS_DELAY]
+            sec = row[SECURITY_DELAY]
+            late = row[LATE_AIRCRAFT_DELAY]
             return [(carrier, (1, arr, carr, wea, nas, sec, late))]
         except:
             return []

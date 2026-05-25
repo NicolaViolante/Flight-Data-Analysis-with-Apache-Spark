@@ -45,6 +45,7 @@ def get_df(spark: SparkSession, dataset_path: str, file_format: str):
     df = df.withColumn(CANCELLED, F.col(CANCELLED).cast("int")).withColumn(DIVERTED, F.col(DIVERTED).cast("int")).withColumn(MONTH, F.col(MONTH).cast("int"))
     for col in DELAY_COLS:
         df = df.withColumn(col, F.col(col).cast("float"))  
+    df = df.fillna(0.0, subset=DELAY_COLS)
     return df
 
 
