@@ -2,8 +2,8 @@ DEPS = (cd spark_code && rm -f deps.zip && zip -r deps.zip . -x "*.pyc" "__pycac
 
 SUBMIT_QUERY = $(DEPS) && docker exec -it spark-master /opt/spark/bin/spark-submit \
 		--master spark://spark-master:7077 \
-		--executor-memory 3g \
-		--driver-memory 2g \
+		--executor-memory 1g \
+		--driver-memory 1g \
 		--py-files /opt/spark/work/deps.zip \
 		/opt/spark/work/
 

@@ -113,7 +113,7 @@ services:
       - spark-master # aspetta il master
     command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.worker.Worker", "spark://spark-master:7077"] # per comportarsi da master (forza il processo); comunicazione con master sulla porta 7077
     environment:
-      - SPARK_WORKER_MEMORY=4G  # il worker può usare al massimo 4 gb di ram
+      - SPARK_WORKER_MEMORY=2G  # il worker può usare al massimo 2 gb di ram
       - SPARK_WORKER_CORES=2 # il worker può usare al massimo 2 core
       - HDFS_URL=hdfs://hdfs-master:54310
       - HADOOP_CONF_DIR=/opt/spark/custom_hadoop_conf

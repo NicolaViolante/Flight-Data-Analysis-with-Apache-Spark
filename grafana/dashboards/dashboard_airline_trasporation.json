@@ -6,19 +6,19 @@
   "refresh": "10s",
   "time": {
     "from": "2024-12-31T23:00:00.000Z",
-    "to": "2025-04-30T21:59:59.000Z"
+    "to": "2025-04-01T21:59:59.000Z"
   },
   "panels": [
     {
+      "id": 1,
       "type": "timeseries",
-      "title": "Query 1 - Ritardo Medio in Partenza (Minutes)",
+      "title": "Query1 - Mean Departure Delay",
       "gridPos": {
         "h": 10,
         "w": 12,
         "x": 0,
         "y": 0
       },
-      "id": 1,
       "datasource": {
         "type": "influxdb",
         "uid": "InfluxDB"
@@ -37,20 +37,140 @@
             "lineWidth": 2,
             "showPoints": "auto",
             "spanNulls": false
+          },
+          "color": {
+            "mode": "palette-classic"
           }
-        }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "dep_delay_mean AA"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "AA"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "dep_delay_mean DL"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "DL"
+              }
+            ]
+          }
+        ]
       }
     },
     {
+      "id": 3,
+      "type": "barchart",
+      "title": "Query 2 - Top 10 Airlines By Mean Arrival Delay",
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "datasource": {
+        "type": "redis-datasource",
+        "uid": "Redis"
+      },
+      "targets": [
+        {
+          "command": "get",
+          "keyName": "sabd:results:query2_csv_df",
+          "type": "command",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "replace": true,
+            "source": "sabd:results:query2_csv_df"
+          }
+        },
+        {
+          "id": "transpose",
+          "options": {}
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "replace": true,
+            "source": "1"
+          }
+        },
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "include": {
+              "names": [
+                "carrier",
+                "arrdelay_mean"
+              ]
+            }
+          }
+        }
+      ],
+      "options": {
+        "orientation": "horizontal",
+        "colorByField": "carrier",
+        "showValue": "never",
+        "legend": {
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": true
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 80
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "arrdelay_mean"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Mean arrival delay"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
       "type": "timeseries",
-      "title": "Query 1 - Tasso di Cancellazione (%)",
+      "title": "Query 1 - Cancellation Rate",
       "gridPos": {
         "h": 10,
         "w": 12,
         "x": 0,
         "y": 10
       },
-      "id": 2,
       "datasource": {
         "type": "influxdb",
         "uid": "InfluxDB"
@@ -67,69 +187,51 @@
             "drawStyle": "line",
             "lineInterpolation": "linear",
             "lineWidth": 2,
-            "showPoints": "auto"
-          }
-        }
-      }
-    },
-    {
-      "type": "barchart",
-      "title": "Query 2 - Classifica Ritardo in Arrivo",
-      "gridPos": {
-        "h": 10,
-        "w": 12,
-        "x": 12,
-        "y": 0
-      },
-      "id": 3,
-      "datasource": {
-        "type": "redis-datasource",
-        "uid": "Redis"
-      },
-      "targets": [
-        {
-          "command": "get",
-          "keyName": "sabd:results:query2_df",
-          "type": "command",
-          "refId": "A"
-        }
-      ],
-      "transformations": [
-        {
-          "id": "extractFields",
-          "options": {
-            "format": "json",
-            "replace": true,
-            "source": "sabd:results:query2_df"
+            "showPoints": "auto",
+            "spanNulls": false
+          },
+          "color": {
+            "mode": "palette-classic"
           }
         },
-        {
-          "id": "filterFieldsByName",
-          "options": {
-            "include": {
-              "names": [
-                "carrier",
-                "arrdelay_mean"
-              ]
-            }
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "cancellation_rate AA"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "AA"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "cancellation_rate DL"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "DL"
+              }
+            ]
           }
-        }
-      ],
-      "options": {
-        "orientation": "auto",
-        "xField": "carrier"
+        ]
       }
     },
     {
+      "id": 4,
       "type": "barchart",
-      "title": "Query 2 - Incidenza Cause di Ritardo",
+      "title": "Query 2 - Delay Causes By Airline",
       "gridPos": {
         "h": 10,
         "w": 12,
         "x": 12,
         "y": 10
       },
-      "id": 4,
       "datasource": {
         "type": "redis-datasource",
         "uid": "Redis"
@@ -137,7 +239,7 @@
       "targets": [
         {
           "command": "get",
-          "keyName": "sabd:results:query2_df",
+          "keyName": "sabd:results:query2_csv_df",
           "type": "command",
           "refId": "A"
         }
@@ -148,7 +250,19 @@
           "options": {
             "format": "json",
             "replace": true,
-            "source": "sabd:results:query2_df"
+            "source": "sabd:results:query2_csv_df"
+          }
+        },
+        {
+          "id": "transpose",
+          "options": {}
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "format": "json",
+            "replace": true,
+            "source": "1"
           }
         },
         {
@@ -169,8 +283,86 @@
       ],
       "options": {
         "orientation": "auto",
-        "stacking": "normal",
-        "xField": "carrier"
+        "showValue": "never",
+        "stacking": "none",
+        "legend": {
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": true
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 80
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "carrier_delay_mean"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Carrier"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "weather_delay_mean"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Weather"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "nas_delay_mean"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Nas"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "security_delay_mean"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Security"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "late_aircraft_delay_mean"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Late Aircraft"
+              }
+            ]
+          }
+        ]
       }
     }
   ]
