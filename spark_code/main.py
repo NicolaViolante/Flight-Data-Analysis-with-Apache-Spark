@@ -7,6 +7,7 @@ if __name__ =="__main__":
     arg_parser.add_argument("--q", type=int, choices=[1, 2], required=True)
     arg_parser.add_argument("--api", type=str, choices=["rdd", "df", "sql"], required=True)
     arg_parser.add_argument("--format", type=str, choices=["csv", "parquet"], required=True)
+    arg_parser.add_argument("--workers", type=int, default=1, required=False)
     args = arg_parser.parse_args()
     shuffle_partitions = args.workers * 2 * 2
 
