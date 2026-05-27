@@ -21,9 +21,9 @@ DELAY_COLS = [DEP_DELAY, ARR_DELAY, CARRIER_DELAY, WEATHER_DELAY, NAS_DELAY, SEC
 
 
 
-def get_spark(app_name: str):
+def get_spark(app_name: str, partitions: int = 4):
     spark = SparkSession.builder.appName(app_name).getOrCreate()
-    spark.conf.set("spark.sql.shuffle.partitions", "200")
+    spark.conf.set("spark.sql.shuffle.partitions", str(partitions))
     spark.sparkContext.setLogLevel("ERROR")
     return spark
 

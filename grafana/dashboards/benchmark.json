@@ -1,0 +1,205 @@
+{
+  "uid": "benchmark_dash_01",
+  "title": "benchmark",
+  "schemaVersion": 38,
+  "timezone": "browser",
+  "refresh": "",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "table",
+      "title": "Query 1",
+      "gridPos": {
+        "h": 15,
+        "w": 18,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "InfluxDB"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"query_results\")\n  |> range(start: 0) \n  |> filter(fn: (r) => r[\"_measurement\"] =~ /^perf_query1_/) \n  |> filter(fn: (r) => r[\"_field\"] == \"execution_time\")\n  |> group(columns: [\"_measurement\", \"workers\"])\n  |> keep(columns: [\"_measurement\", \"workers\", \"_value\"])",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "includeTimeField": false,
+            "mode": "seriesToRows",
+            "reducers": [
+              "max",
+              "min",
+              "mean",
+              "median",
+              "variance"
+            ]
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "Field": ""
+            }
+          }
+        }
+      ],
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true,
+        "footer": {
+          "enablePagination": false,
+          "show": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Field"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 247
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "type": "table",
+      "title": "Query 2",
+      "gridPos": {
+        "h": 15,
+        "w": 18,
+        "x": 0,
+        "y": 15
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "InfluxDB"
+      },
+      "targets": [
+        {
+          "query": "from(bucket: \"query_results\")\n  |> range(start: 0) \n  |> filter(fn: (r) => r[\"_measurement\"] =~ /^perf_query2_/)\n  |> filter(fn: (r) => r[\"_field\"] == \"execution_time\")\n  |> group(columns: [\"_measurement\", \"workers\"])\n  |> keep(columns: [\"_measurement\", \"workers\", \"_value\"])",
+          "refId": "A"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "includeTimeField": false,
+            "mode": "seriesToRows",
+            "reducers": [
+              "max",
+              "min",
+              "mean",
+              "median",
+              "variance"
+            ]
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "Field": ""
+            }
+          }
+        }
+      ],
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true,
+        "footer": {
+          "enablePagination": false,
+          "show": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Field"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 320
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

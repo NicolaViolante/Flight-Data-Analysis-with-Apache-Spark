@@ -52,7 +52,8 @@ query:
     	echo "ERROR: missing parameters"; \
         echo "Example of correct invocation: make query q=1 api=df format=csv"; \
     else \
-        $(SUBMIT_QUERY)main.py --q $(q) --api $(api) --format $(format); \
+        workers_val=$${workers:-1}; \
+        $(SUBMIT_QUERY)main.py --q $(q) --api $(api) --format $(format) --workers $$workers_val; \
     fi
 
 perf: scale

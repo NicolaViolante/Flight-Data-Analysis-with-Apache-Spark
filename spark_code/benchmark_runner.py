@@ -22,15 +22,16 @@ if __name__ == "__main__":
     arg_parser.add_argument("--times", type=int, default=30, required=False)
     arg_parser.add_argument("--workers", type=int, default=1, required=False)
     args = arg_parser.parse_args()
+    shuffle_partitions = args.workers * 2 * 2 # la documentazione di spark suggerisce 2/3 task per core, ogni worker nel mio caso ha 2 core assegnati
     try: 
         query = importlib.import_module(f'query{args.q}.query{args.q}_{args.api}')
     except KeyError: 
         raise Exception("Not legit combination")
     dataset_path = f"hdfs://hdfs-master:54310/dataset_{args.format}/"
-    print(f"Benchmark start: Query {args.q}, api: {args.api}, format: {args.format}")
+    print(f"Benchmark start: Query {args.q}, api: {args.api}, format: {args.format}, workers: {args.workers}, partitions: {shuffle_partitions}")
     client, write_api = get_influx_client()
     for num_run in range(1, args.times + 1):
-        spark = get_spark(f"benchmark_query{args.q}_{args.format}_{args.api}_run{num_run}") #start della SparkSession (per non far usare dati in RAM precedenti)
+        spark = get_spark(f"benchmark_query{args.q}_{args.format}_{args.api}_run{num_run}", partitions=shuffle_partitions) #start della SparkSession (per non far usare dati in RAM precedenti)
         if num_run == 1:
             check_hdfs(spark, dataset_path)
         run_time = query.run(spark, dataset_path, args.format, timed=True) #evita salvataggio dei dati
