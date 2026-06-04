@@ -19,7 +19,7 @@ To spin up the infrastructure and prepare the data, run the following commands i
 
 **3. Restore NiFi flow:** `make restore-flow`
 
-**4. Start data download and processing:** `make nifi-start`
+**4. Start data ingestion:** `make nifi-start`
 
 ---
 
