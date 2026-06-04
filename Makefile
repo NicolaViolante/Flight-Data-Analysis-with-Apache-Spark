@@ -108,3 +108,8 @@ nifi-start:
 	@echo "Initializing nifi flow..."
 	@chmod +x ./nifi/run_nifi.sh
 	@./nifi/run_nifi.sh
+	@while ! docker exec hdfs-master hdfs dfs -test -e /dataset_csv/dataset; do \
+		echo "Data not ready yet. Retrying in 1 seconds..."; \
+		sleep 1; \
+	done
+	@echo "Data successfully verified on HDFS. Pipeline is ready!"
