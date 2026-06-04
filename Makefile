@@ -19,6 +19,7 @@ reset: #elimina anche i volumi
 init-hdfs:
 	@echo "Initializing HDFS..."
 	docker exec -it hdfs-master bash -c "hdfs namenode -format && \$$HADOOP_HOME/sbin/start-dfs.sh"
+	@echo "Sleeping for 10 seconds to allow HDFS DataNodes to register and exit safemode..."
 	sleep 10
 	docker exec -it hdfs-master hdfs dfsadmin -safemode leave
 	docker exec -it hdfs-master hdfs dfs -chmod 777 /
@@ -26,6 +27,7 @@ init-hdfs:
 start-hdfs:
 	@echo "Restarting HDFS..."
 	docker exec -it hdfs-master bash -c "\$$HADOOP_HOME/sbin/start-dfs.sh"
+	@echo "Sleeping for 10 seconds to allow HDFS DataNodes to register and exit safemode..."
 	sleep 10
 	docker exec -it hdfs-master hdfs dfsadmin -safemode leave
 
@@ -101,6 +103,7 @@ scale:
 	else \
 		echo "Scaling cluster with $(workers) Spark Workers..."; \
 		docker-compose up -d --scale spark-worker=$(workers); \
+		echo "Sleeping for 10 seconds to allow new Workers to start JVM and connect to Master..."; \
 		sleep 10; \
 	fi
 
