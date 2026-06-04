@@ -94,8 +94,8 @@ services:
     ports:
       - "8080:8080" # dashboard web di Spark
       - "7077:7077" # porta che i worker usano per comunicare con il master
-      - "4040:4040" # <-- AGGIUNGI QUESTA (Spark UI 1)
-      - "4041:4041" # <-- AGGIUNGI QUESTA (Spark UI 2)
+      - "4040:4040" #Spark UI
+      - "4041:4041"
     environment:
       - HDFS_URL=hdfs://hdfs-master:54310 # indirizzo del container
       - HADOOP_CONF_DIR=/opt/spark/custom_hadoop_conf #cartella con configurazione HDFS
