@@ -33,15 +33,15 @@ Executes the query once and exports the results on HDFS, locally, and to InfluxD
 
 **Syntax:** `make query q=<1|2> api=<rdd|df|sql> format=<csv|parquet>`
 
-Note: workers is an aptional parameter
+Note: workers is an optional parameter
 
-**Benchmark mode**
+### Benchmark mode
 
 Executes the query N times (default 10) to collect execution time metrics. It supports dynamic scaling of Spark Workers. The timing results are logged into InfluxDB
 
 **Syntax:** `make perf q=<1|2> api=<rdd|df|sql> format=<csv|parquet> workers=<num>`
 
-Note: times is an aptional parameter
+Note: times is an optional parameter
 
 ---
 
@@ -49,7 +49,7 @@ Note: times is an aptional parameter
 
 Once the project is up and running, you can monitor the various services through the following web interfaces:
 * **Grafana:** [http://localhost:3000](http://localhost:3000)
-* **Apache Spark Master:** [https://localhost:8080](https://localhost:8080)
+* **Apache Spark Master:** [http://localhost:8080](http://localhost:8080)
 * **HDFS NameNode:** [http://localhost:9870](http://localhost:9870)
 * **NiFi:** [https://localhost:8443](https://localhost:8443)
 * **InfluxDB:** [http://localhost:8086](http://localhost:8086)
